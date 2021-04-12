@@ -256,7 +256,7 @@ function renderCountdown(count) {
 
 function renderRaceStartView(track, racers) {
 	return `
-		<header>
+		<header  style="background-image: url('../assets/images/racing_cars.webp');">
 			<h1>Race: ${track}</h1>
 		</header>
 		<main id="two-columns">
