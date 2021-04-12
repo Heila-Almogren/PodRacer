@@ -74,9 +74,11 @@ async function delay(ms) {
 async function handleCreateRace() {
 
 	// render starting UI
+
+
+
 	const player_id = store.player_id;
 	const track_id = store.track_id;
-
 	renderAt('#race', renderRaceStartView(track_id, player_id))
 
 	const race = await createRace(player_id, track_id)
@@ -88,34 +90,31 @@ async function handleCreateRace() {
 	// The race has been created, now start the countdown
 	await runCountdown()
 	await startRace(race_id - 1)
-	await runRace(race_id)
+	await runRace(race_id - 1)
 }
 
 async function runRace(raceID) {
-
-
 	return new Promise(resolve => {
 		console.log("run")
 
 		const raceInterval = setInterval(() => {
 
-			getRace(raceID - 1).then((race_info) => {
+			getRace(raceID).then((race_info) => {
 				if (race_info.status == "in-progress") {
+					console.log("satus is " + race_info.status + ", render again")
 					renderAt('#leaderBoard', raceProgress(race_info.positions))
 				} else {
+					console.log("race finished - clear interval and resolve")
 					clearInterval(raceInterval);
 					renderAt('#race', resultsView(race_info.positions))
-					reslove(race_info)
+					resolve(race_info)
 				}
 			})
 
-
-
 		}, 500);
 
-
-	}).catch(err => {
-		console.log(err)
+	}).catch(error => {
+		console.log("error in runRace: " + error);
 	})
 }
 
@@ -148,7 +147,7 @@ async function runCountdown() {
 
 		})
 	} catch (error) {
-		console.log(error);
+		console.log("error in runCountdown: " + error);
 	}
 }
 
@@ -185,7 +184,7 @@ function handleSelectTrack(target) {
 }
 
 function handleAccelerate() {
-	console.log("accelerate button clicked")
+
 
 	accelerate(store.race_id - 1)
 }
@@ -277,7 +276,7 @@ function resultsView(positions) {
 	positions.sort((a, b) => (a.final_position > b.final_position) ? 1 : -1)
 
 	return `
-		<header>
+		<header style="background-image: url('../assets/images/prizes.webp');">
 			<h1>Race Results</h1>
 		</header>
 		<main>
@@ -288,8 +287,7 @@ function resultsView(positions) {
 }
 
 function raceProgress(positions) {
-	console.log(store.player_id)
-	console.log(positions)
+
 	let userPlayer = positions.find(e => e.id == store.player_id)
 	console.log(userPlayer)
 	userPlayer.driver_name += " (you)"
