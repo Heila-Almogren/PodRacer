@@ -73,49 +73,59 @@ async function delay(ms) {
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
 
-	// render starting UI
+	try {
 
+		// render starting UI
+		const player_id = store.player_id;
+		const track_id = store.track_id;
+		renderAt('#race', renderRaceStartView(track_id, player_id))
 
+		const race = await createRace(player_id, track_id)
+		const race_id = race["ID"]
+		console.log("race id:" + race_id)
 
-	const player_id = store.player_id;
-	const track_id = store.track_id;
-	renderAt('#race', renderRaceStartView(track_id, player_id))
+		store.race_id = race_id
+		console.log("race_id" + race_id)
+		// The race has been created, now start the countdown
+		await runCountdown()
+		await startRace(race_id - 1)
+		await runRace(race_id - 1)
 
-	const race = await createRace(player_id, track_id)
-	const race_id = race["ID"]
-	console.log("race id:" + race_id)
-
-	store.race_id = race_id
-	console.log("race_id" + race_id)
-	// The race has been created, now start the countdown
-	await runCountdown()
-	await startRace(race_id - 1)
-	await runRace(race_id - 1)
+	} catch (error) {
+		console.log("error in handleCreateRace: " + error)
+	}
 }
 
 async function runRace(raceID) {
-	return new Promise(resolve => {
-		console.log("run")
 
-		const raceInterval = setInterval(() => {
+	try {
+		return new Promise(resolve => {
+			console.log("run")
+			let counter = 0;
+			const raceInterval = setInterval(() => {
 
-			getRace(raceID).then((race_info) => {
-				if (race_info.status == "in-progress") {
-					console.log("satus is " + race_info.status + ", render again")
-					renderAt('#leaderBoard', raceProgress(race_info.positions))
-				} else {
-					console.log("race finished - clear interval and resolve")
-					clearInterval(raceInterval);
-					renderAt('#race', resultsView(race_info.positions))
-					resolve(race_info)
-				}
-			})
+				getRace(raceID).then((race_info) => {
+					console.log(++counter)
+					if (race_info.status == "in-progress") {
+						console.log("satus is " + race_info.status + ", render again")
+						renderAt('#leaderBoard', raceProgress(race_info.positions))
+					} else {
+						console.log("race finished - clear interval and resolve")
+						clearInterval(raceInterval);
+						renderAt('#race', resultsView(race_info.positions))
+						resolve(race_info)
+					}
+				})
 
-		}, 500);
+			}, 500);
 
-	}).catch(error => {
-		console.log("error in runRace: " + error);
-	})
+		}).catch(error => {
+			console.log("error in runRace: " + error);
+		})
+	} catch (error) {
+		console.log("error in runRace: " + error)
+	}
+
 }
 
 async function runCountdown() {
@@ -288,7 +298,7 @@ function resultsView(positions) {
 
 function raceProgress(positions) {
 
-	let userPlayer = positions.find(e => e.id == store.player_id)
+	const userPlayer = positions.find(e => e.id == store.player_id)
 	console.log(userPlayer)
 	userPlayer.driver_name += " (you)"
 
